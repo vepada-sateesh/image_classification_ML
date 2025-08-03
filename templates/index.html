@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cat or Not? 🐾</title>
+    <style>
+        body { font-family: Arial; text-align: center; margin-top: 50px; }
+        input, button { margin: 10px; }
+        #result { font-size: 1.5em; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🐱 Is It a Cat?</h1>
+    <form id="uploadForm">
+        <input type="file" name="file" id="fileInput" accept="image/*" required>
+        <button type="submit">Check</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return alert("Please select an image!");
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            resultDiv.textContent = "Checking...";
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `<b>${data.prediction}</b><br>Confidence: ${data.confidence}`;
+                } else {
+                    resultDiv.textContent = "Error: " + data.error;
+                }
+            } catch (err) {
+                resultDiv.textContent = "Error: " + err.message;
+            }
+        });
+    </script>
+</body>
+</html>
