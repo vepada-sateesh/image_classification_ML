@@ -98,5 +98,15 @@ Let me know if you want help navigating to the exact path of your `venv\Scripts\
 
 
 
+### Normalize
+
+# so Normalize is a Mathematical technique where we can reducer larger values of a data set to keep them in range of 0 to 1 by dividing all values with maximum value of data set so that its corresponding data ratios always same
+## generally for image pixels we do divide them all with rgb value / 255 (each pixel channel (R, G, B) is stored as an integer from 0 (no intensity) to 255 (full intensity).)
+
+
+
+
+
+
 
 

@@ -24,6 +24,7 @@ def load_images(folder, label, size=(64, 64)):
         try:
             # Open image, convert to RGB, resize, flatten to vector
             img = Image.open(filepath).convert('RGB').resize(size)
+            #some detail is lost, but we do it because models need uniform input dimensions to work efficiently.
             img_array = np.array(img).flatten() / 255.0  # Normalize pixel values
             data.append(img_array)
             labels.append(label)
@@ -43,16 +44,30 @@ not_cats_data, not_cats_labels = load_images(not_cats_folder, 0)
 X = np.array(cats_data + not_cats_data)
 y = np.array(cats_labels + not_cats_labels)
 
+
+# absolutly no need to confuse here because we are adding both the classes data in X
+# both the labels data in one array
+# even we did it Each Class value based on its corresponding Label value (example : X = [[1],[2],[10],[12]], y = [0,0,1,1])
+
 print(f"✅ Loaded {len(X)} images: {sum(y)} cats, {len(y) - sum(y)} not-cats.")
+
+
 
 # ----------- STEP 2: Train Logistic Regression Model -----------
 
 # Scale features (standardize pixel values)
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+X_scaled = scaler.fit_transform(X) #now we get the data whose mean is 0 and std = 1
 
 # Split dataset for training/testing
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+print(len(X_train),len(y_train))
+
+
+print(y_test,y_train)
+
+
+#test_size = 0.2 which means 20% data used for testing and remaining for training
 
 # Create and train model
 model = LogisticRegression(max_iter=1000)
