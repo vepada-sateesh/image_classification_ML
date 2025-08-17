@@ -9,7 +9,7 @@ from PIL import Image
 import os
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, BatchNormalization, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 # ----------- STEP 1: Load and Preprocess Raw Images -----------
 
-def load_images(folder, label, size=(64, 64)):
+def load_images(folder, label, size=(128, 128)):
     """
     Load images from a folder, resize to 'size', normalize, and assign label.
     """
@@ -64,23 +64,42 @@ else:
 
     # Build CNN (slightly deeper)
     model = Sequential([
-        Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)),
-        MaxPooling2D(2, 2),
-        Conv2D(64, (3, 3), activation='relu'),
-        MaxPooling2D(2, 2),
-        Flatten(),
-        Dense(128, activation='relu'),
-        Dense(1, activation='sigmoid')  # Binary output
-    ])
+    Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 3)),
+    BatchNormalization(),
+    MaxPooling2D(2, 2),
+    
+    Conv2D(64, (3, 3), activation='relu'),
+    BatchNormalization(),
+    MaxPooling2D(2, 2),
+    
+    Conv2D(128, (3, 3), activation='relu'),
+    BatchNormalization(),
+    MaxPooling2D(2, 2),
+
+    Conv2D(256, (3, 3), activation='relu'),
+    BatchNormalization(),
+    MaxPooling2D(2, 2),
+    
+    Flatten(),
+    Dense(512, activation='relu'),
+    Dropout(0.5),  # prevents overfitting
+    Dense(1, activation='sigmoid')  # Binary classification
+])
+
+
 
     model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy'])
 
     # Add Data Augmentation
     datagen = ImageDataGenerator(
-        rotation_range=30,
-        zoom_range=0.2,
-        horizontal_flip=True
-    )
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
     datagen.fit(X_train)
 
     # Train CNN with augmented data
@@ -119,7 +138,7 @@ def predict():
 
         # Preprocess uploaded image
         try:
-            img = Image.open(file).convert('RGB').resize((64, 64))
+            img = Image.open(file).convert('RGB').resize((128, 128))  # 👈 match model input
         except Exception as e:
             return jsonify({"error": f"Invalid image file: {str(e)}"}), 400
 
