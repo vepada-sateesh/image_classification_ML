@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 
 # Load model
-model = load_model("cat_not_cat.h5")
+model = load_model("cat_classifier_cnn.h5")
 
 st.title("🐱 Cat vs Not-Cat Classifier")
 
