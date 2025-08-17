@@ -1,68 +1,23 @@
-# -------------------------------
-# Cat vs Not-Cat Classifier (Deployed Version)
-# -------------------------------
-
-from flask import Flask, request, jsonify, render_template
-import numpy as np
-from PIL import Image
+import streamlit as st
 from tensorflow.keras.models import load_model
-import os
+from PIL import Image
+import numpy as np
 
-# Initialize Flask app
-app = Flask(__name__)
+# Load model
+model = load_model("cat_not_cat.h5")
 
-# ----------- STEP 1: Load Pretrained Model -----------
-model_file = "cat_classifier_cnn.h5"
+st.title("🐱 Cat vs Not-Cat Classifier")
 
-if os.path.exists(model_file):
-    print("📦 Loading trained model...")
-    model = load_model(model_file)
-else:
-    raise FileNotFoundError("❌ Trained model file not found. Make sure cat_classifier_cnn.h5 is in the project folder.")
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
 
-# ----------- STEP 2: Define Flask Routes -----------
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).resize((64, 64))
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-@app.route("/")
-def index():
-    return render_template("index.html")  # Optional: you can remove this if no HTML UI
+    img_array = np.array(image) / 255.0
+    img_array = img_array.reshape(1, 64, 64, 3)
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    """
-    Handle image upload, preprocess, and predict using CNN.
-    """
-    try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file uploaded"}), 400
+    prediction = model.predict(img_array)[0][0]
+    label = "Cat 🐱" if prediction > 0.5 else "Not Cat 🐯"
 
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"error": "Empty filename"}), 400
-
-        # Preprocess uploaded image
-        try:
-            img = Image.open(file).convert('RGB').resize((128, 128))  # 👈 match model input
-        except Exception as e:
-            return jsonify({"error": f"Invalid image file: {str(e)}"}), 400
-
-        img_array = np.array(img) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)  # Shape: (1, 128, 128, 3)
-
-        # Predict
-        prediction = model.predict(img_array)[0][0]
-        label = "Cat 🐱" if prediction >= 0.5 else "Not a Cat 🚫"
-        confidence = f"{prediction * 100:.2f}%" if prediction >= 0.5 else f"{(1 - prediction) * 100:.2f}%"
-
-        return jsonify({
-            "prediction": label,
-            "confidence": confidence
-        })
-
-    except Exception as e:
-        print(f"🔥 Backend error: {e}")
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
-
-# ----------- STEP 3: Run Flask App -----------
-
-if __name__ == "__main__":
-    app.run(debug=True, port=9999)
+    st.write(f"Prediction: **{label}** (confidence: {prediction:.2f})")
